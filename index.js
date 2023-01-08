@@ -40,7 +40,7 @@ async function run() {
     try {
         await client.connect()
         console.log('connected')
-        const productCollection = client.db('shop').collection('products');
+        const toolsCollection = client.db('shop').collection('products');
         const cartProductsCollections = client.db('shop').collection('cart');
         const orderedVoucherCollections = client.db('shop').collection('customer_addresses');
         const orderedVoucherForAdmin = client.db('shop').collection('orderedVoucherForAdmin');
@@ -61,7 +61,19 @@ async function run() {
         }
 
 
+        app.post('/tools', async (req, res) => {
 
+            const tools = req.body;
+            const result = toolsCollection.insertOne(tools);
+            res.send(result)
+
+        })
+        app.get('/tools', async (req, res) => {
+
+            const tools = await toolsCollection.find({}).toArray()
+            res.send(tools)
+
+        })
 
     } finally {
 
@@ -89,3 +101,4 @@ app.listen(port, () => {
 
 
 
+// https://tools-house.onrender.com/
