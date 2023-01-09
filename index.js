@@ -40,12 +40,8 @@ async function run() {
     try {
         await client.connect()
         console.log('connected')
-        const toolsCollection = client.db('shop').collection('products');
-        const cartProductsCollections = client.db('shop').collection('cart');
-        const orderedVoucherCollections = client.db('shop').collection('customer_addresses');
-        const orderedVoucherForAdmin = client.db('shop').collection('orderedVoucherForAdmin');
-
-        const usersCollection = client.db('shop').collection('users');
+        const toolsCollection = client.db('tool-house').collection('tools');
+        const usersCollection = client.db('tool-house').collection('users');
 
 
 
@@ -74,6 +70,30 @@ async function run() {
             res.send(tools)
 
         })
+
+
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = {
+
+                $set: user
+            }
+            const result = await usersCollection.updateOne(filter, updateDoc, options)
+            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_VAR, { expiresIn: '365d' })
+            res.send({ result, token })
+
+        })
+
+        app.get('/user', verifyJWT, verifyAdmin, async (req, res) => {
+            const users = await usersCollection.find().toArray()
+            res.send(users)
+        })
+
+
+
 
     } finally {
 
