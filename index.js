@@ -41,8 +41,9 @@ async function run() {
         console.log('connected')
         const toolsCollection = client.db('tool-house').collection('tools');
         const usersCollection = client.db('tool-house').collection('users');
+        const ordersCollection = client.db('tool-house').collection('orders');
 
-
+        
 
         const verifyAdmin = async (req, res, next) => {
             const requester = req.decoded.email
@@ -114,7 +115,13 @@ async function run() {
         });
 
 
+        app.post('/order', async (req, res) => {
 
+            const order = req.body;
+            const result = ordersCollection.insertOne(order);
+            res.send(result)
+
+        })
 
     } finally {
 
