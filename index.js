@@ -76,7 +76,12 @@ async function run() {
 
         })
 
+        app.get('/myOrders/:email', async (req, res) => {
 
+            const myOrders = await ordersCollection.find({}).toArray()
+            res.send(myOrders)
+
+        })
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
             const user = req.body;
@@ -113,7 +118,6 @@ async function run() {
             });
         });
 
-
         app.post('/order', async (req, res) => {
 
             const order = req.body;
@@ -121,13 +125,17 @@ async function run() {
             res.send(result)
 
         })
-
+        app.delete('/deleteOrder/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await ordersCollection.deleteOne(filter);
+            res.send(result);
+        })
     } finally {
 
     }
 
 }
-
 
 run().catch(console.dir)
 
