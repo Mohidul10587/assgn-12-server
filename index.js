@@ -97,11 +97,33 @@ async function run() {
 
         })
 
-        app.get('/user', verifyJWT, async (req, res) => {
+        app.get('/user',  async (req, res) => {
             const users = await usersCollection.find({}).toArray()
             res.send(users)
         })
 
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email
+            const user = await usersCollection.findone({ email: email });
+            const isAdmin = user.roll === 'admin'
+            res.send({ admin: isAdmin })
+          })
+          app.delete('/deleteUser/:email', async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const result = await usersCollection.deleteOne(filter);
+            res.send(result);
+          })
+        app.put('/user/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const updateDoc = {
+              $set: { roll: 'admin' }
+            }
+            const result = await usersCollection.updateOne(filter, updateDoc)
+            res.send(result)
+      
+          })
         app.post('/create-payment-intent', async (req, res) => {
             const price = req.body.price;
             const amount = price * 100;
@@ -123,6 +145,13 @@ async function run() {
             const order = req.body;
             const result = ordersCollection.insertOne(order);
             res.send(result)
+
+        })
+        app.get('/orderPayment/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const orderPayment = await ordersCollection.findOne(filter)
+            res.send(orderPayment)
 
         })
         app.delete('/deleteOrder/:id', async (req, res) => {
