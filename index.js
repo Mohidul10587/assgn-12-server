@@ -41,8 +41,7 @@ async function run() {
         const toolsCollection = client.db('tool-house').collection('tools');
         const usersCollection = client.db('tool-house').collection('users');
         const ordersCollection = client.db('tool-house').collection('orders');
-
-        
+        const paymentsCollection = client.db('tool-house').collection('payments');
 
         const verifyAdmin = async (req, res, next) => {
             const requester = req.decoded.email
@@ -97,37 +96,37 @@ async function run() {
 
         })
 
-        app.get('/user',  async (req, res) => {
+        app.get('/user', async (req, res) => {
             const users = await usersCollection.find({}).toArray()
             res.send(users)
         })
 
         app.get('/admin/:email', async (req, res) => {
             const email = req.params.email
-            const user = await usersCollection.findone({ email: email });
+            const user = await usersCollection.findOne({ email: email });
             const isAdmin = user.roll === 'admin'
             res.send({ admin: isAdmin })
-          })
-          app.delete('/deleteUser/:email', async (req, res) => {
+        })
+        app.delete('/deleteUser/:email', async (req, res) => {
             const email = req.params.email;
             const filter = { email: email };
             const result = await usersCollection.deleteOne(filter);
             res.send(result);
-          })
+        })
         app.put('/user/admin/:email', async (req, res) => {
             const email = req.params.email;
             const filter = { email: email };
             const updateDoc = {
-              $set: { roll: 'admin' }
+                $set: { roll: 'admin' }
             }
             const result = await usersCollection.updateOne(filter, updateDoc)
             res.send(result)
-      
-          })
+
+        })
         app.post('/create-payment-intent', async (req, res) => {
             const price = req.body.price;
             const amount = price * 100;
-          
+
             const paymentIntent = await stripe.paymentIntents.create({
                 currency: 'usd',
                 amount: amount,
@@ -139,7 +138,20 @@ async function run() {
                 clientSecret: paymentIntent.client_secret,
             });
         });
-
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+            const id = payment.id
+            const filter = { _id: ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                   
+                }
+            }
+            const updatedResult = await ordersCollection.updateOne(filter, updatedDoc)
+            res.send(result);
+        })
         app.post('/order', async (req, res) => {
 
             const order = req.body;
@@ -147,7 +159,7 @@ async function run() {
             res.send(result)
 
         })
-        app.get('/orderPayment/:id', async (req, res) => {
+        app.get('/orders/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const orderPayment = await ordersCollection.findOne(filter)
@@ -177,11 +189,6 @@ app.get('/', async (req, res) => {
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
 })
-
-
-
-
-
 
 
 
