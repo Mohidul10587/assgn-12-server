@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors');
 
+
 const stripe = require("stripe")('sk_test_51MSFzbGk3QfbJiMcsqL1UPl95CGQ4zuA9vzlgYy8aodGEOs7jobqIhTQfdnH50XILCQVSJhL5kSDosjGgjT3ZV2v00SYnQOh85');
 
 require('dotenv').config()
@@ -13,8 +14,8 @@ app.use(express.json());
 app.use(cors())
 app.use(express.json())
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ohpemee.mongodb.net/?retryWrites=true&w=majority`;
-
+// cons uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ohpemee.mongodb.net/?retryWrites=true&w=majority`;
+const uri ='mongodb://mohid:f2WoP4JTiUqYoftX@ac-advgvfk-shard-00-00.ohpemee.mongodb.net:27017,ac-advgvfk-shard-00-01.ohpemee.mongodb.net:27017,ac-advgvfk-shard-00-02.ohpemee.mongodb.net:27017/?ssl=true&replicaSet=atlas-4xy0vv-shard-0&authSource=admin&retryWrites=true&w=majority'
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 // verify token
@@ -42,6 +43,8 @@ async function run() {
         const usersCollection = client.db('tool-house').collection('users');
         const ordersCollection = client.db('tool-house').collection('orders');
         const paymentsCollection = client.db('tool-house').collection('payments');
+        const reviewsCollection = client.db('tool-house').collection('review');
+        
 
         const verifyAdmin = async (req, res, next) => {
             const requester = req.decoded.email
@@ -76,8 +79,9 @@ async function run() {
         })
 
         app.get('/myOrders/:email', async (req, res) => {
-
-            const myOrders = await ordersCollection.find({}).toArray()
+            const email = req.params.email
+            const filter = { email: email };
+            const myOrders = await ordersCollection.find(filter).toArray()
             res.send(myOrders)
 
         })
@@ -99,6 +103,11 @@ async function run() {
         app.get('/user', async (req, res) => {
             const users = await usersCollection.find({}).toArray()
             res.send(users)
+        })
+        app.get('/singleUser/:email', async (req, res) => {
+            const email = req.params.email
+            const user = await usersCollection.findOne({ email: email });
+            res.send(user)
         })
 
         app.get('/admin/:email', async (req, res) => {
@@ -123,6 +132,26 @@ async function run() {
             res.send(result)
 
         })
+
+
+        app.put('/user/update/:email', async (req, res) => {
+            const email = req.params.email;
+            const data = req.body
+            console.log(data , email)
+            const filter = { email: email };
+            const updateDoc = {
+                $set: { 
+                    location: data.location,
+                    education: data.education,
+                    phnNumber: data.phnNumber
+                }
+            }
+            const result = await usersCollection.updateOne(filter, updateDoc)
+            res.send(result)
+
+        })
+
+
         app.post('/create-payment-intent', async (req, res) => {
             const price = req.body.price;
             const amount = price * 100;
@@ -141,12 +170,14 @@ async function run() {
         app.post('/payments', async (req, res) => {
             const payment = req.body;
             const result = await paymentsCollection.insertOne(payment);
-            const id = payment.id
-            const filter = { _id: ObjectId(id) }
+            const orderId = payment.orderId
+            const transactionId = payment.transactionId
+            const filter = { _id: ObjectId(orderId) }
             const updatedDoc = {
                 $set: {
                     paid: true,
-                   
+                    transactionId: transactionId
+
                 }
             }
             const updatedResult = await ordersCollection.updateOne(filter, updatedDoc)
@@ -172,6 +203,23 @@ async function run() {
             const result = await ordersCollection.deleteOne(filter);
             res.send(result);
         })
+
+        app.post('/review', async (req, res) => {
+
+            const review = req.body;
+            const result = reviewsCollection.insertOne(review);
+            res.send(result)
+
+        })
+
+        app.get('/reviews/:email', async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const result = await reviewsCollection.find(filter).toArray();
+            res.send(result)
+
+        })
+
     } finally {
 
     }
@@ -179,7 +227,6 @@ async function run() {
 }
 
 run().catch(console.dir)
-
 
 
 app.get('/', async (req, res) => {
