@@ -15,7 +15,7 @@ app.use(cors())
 app.use(express.json())
 
 // cons uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ohpemee.mongodb.net/?retryWrites=true&w=majority`;
-const uri ='mongodb://mohid:f2WoP4JTiUqYoftX@ac-advgvfk-shard-00-00.ohpemee.mongodb.net:27017,ac-advgvfk-shard-00-01.ohpemee.mongodb.net:27017,ac-advgvfk-shard-00-02.ohpemee.mongodb.net:27017/?ssl=true&replicaSet=atlas-4xy0vv-shard-0&authSource=admin&retryWrites=true&w=majority'
+const uri = 'mongodb://mohid:f2WoP4JTiUqYoftX@ac-advgvfk-shard-00-00.ohpemee.mongodb.net:27017,ac-advgvfk-shard-00-01.ohpemee.mongodb.net:27017,ac-advgvfk-shard-00-02.ohpemee.mongodb.net:27017/?ssl=true&replicaSet=atlas-4xy0vv-shard-0&authSource=admin&retryWrites=true&w=majority'
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 // verify token
@@ -44,7 +44,7 @@ async function run() {
         const ordersCollection = client.db('tool-house').collection('orders');
         const paymentsCollection = client.db('tool-house').collection('payments');
         const reviewsCollection = client.db('tool-house').collection('review');
-        
+
 
         const verifyAdmin = async (req, res, next) => {
             const requester = req.decoded.email
@@ -58,10 +58,10 @@ async function run() {
         }
 
 
-        app.post('/tools', async (req, res) => {
+        app.post('/tools', verifyJWT, async (req, res) => {
 
             const tools = req.body;
-            const result = toolsCollection.insertOne(tools);
+            const result =await toolsCollection.insertOne(tools);
             res.send(result)
 
         })
@@ -78,7 +78,7 @@ async function run() {
 
         })
 
-        app.get('/myOrders/:email', async (req, res) => {
+        app.get('/myOrders/:email', verifyJWT, async (req, res) => {
             const email = req.params.email
             const filter = { email: email };
             const myOrders = await ordersCollection.find(filter).toArray()
@@ -100,29 +100,29 @@ async function run() {
 
         })
 
-        app.get('/user', async (req, res) => {
+        app.get('/user', verifyJWT, async (req, res) => {
             const users = await usersCollection.find({}).toArray()
             res.send(users)
         })
-        app.get('/singleUser/:email', async (req, res) => {
+        app.get('/singleUser/:email', verifyJWT, async (req, res) => {
             const email = req.params.email
             const user = await usersCollection.findOne({ email: email });
             res.send(user)
         })
 
-        app.get('/admin/:email', async (req, res) => {
+        app.get('/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email
             const user = await usersCollection.findOne({ email: email });
             const isAdmin = user.roll === 'admin'
             res.send({ admin: isAdmin })
         })
-        app.delete('/deleteUser/:email', async (req, res) => {
+        app.delete('/deleteUser/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const filter = { email: email };
             const result = await usersCollection.deleteOne(filter);
             res.send(result);
         })
-        app.put('/user/admin/:email', async (req, res) => {
+        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const filter = { email: email };
             const updateDoc = {
@@ -134,13 +134,12 @@ async function run() {
         })
 
 
-        app.put('/user/update/:email', async (req, res) => {
+        app.put('/user/update/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const data = req.body
-            console.log(data , email)
             const filter = { email: email };
             const updateDoc = {
-                $set: { 
+                $set: {
                     location: data.location,
                     education: data.education,
                     phnNumber: data.phnNumber
@@ -152,7 +151,7 @@ async function run() {
         })
 
 
-        app.post('/create-payment-intent', async (req, res) => {
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
             const price = req.body.price;
             const amount = price * 100;
 
@@ -167,7 +166,7 @@ async function run() {
                 clientSecret: paymentIntent.client_secret,
             });
         });
-        app.post('/payments', async (req, res) => {
+        app.post('/payments', verifyJWT, async (req, res) => {
             const payment = req.body;
             const result = await paymentsCollection.insertOne(payment);
             const orderId = payment.orderId
@@ -183,28 +182,28 @@ async function run() {
             const updatedResult = await ordersCollection.updateOne(filter, updatedDoc)
             res.send(result);
         })
-        app.post('/order', async (req, res) => {
+        app.post('/order', verifyJWT, async (req, res) => {
 
             const order = req.body;
-            const result = ordersCollection.insertOne(order);
+            const result = await ordersCollection.insertOne(order);
             res.send(result)
 
         })
-        app.get('/orders/:id', async (req, res) => {
+        app.get('/orders/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const orderPayment = await ordersCollection.findOne(filter)
             res.send(orderPayment)
 
         })
-        app.delete('/deleteOrder/:id', async (req, res) => {
+        app.delete('/deleteOrder/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const result = await ordersCollection.deleteOne(filter);
             res.send(result);
         })
 
-        app.post('/review', async (req, res) => {
+        app.post('/review', verifyJWT, async (req, res) => {
 
             const review = req.body;
             const result = reviewsCollection.insertOne(review);
