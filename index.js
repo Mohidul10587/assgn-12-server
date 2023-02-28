@@ -66,7 +66,6 @@ async function run() {
 
         })
         app.get('/tools', async (req, res) => {
-
             const tools = await toolsCollection.find({}).toArray()
             res.send(tools)
 
@@ -76,6 +75,12 @@ async function run() {
             const item = await toolsCollection.findOne({ _id: ObjectId(id) });
             res.send(item)
 
+        })
+        app.delete('/deleteTool/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await toolsCollection.deleteOne(filter);
+            res.send(result);
         })
 
         app.get('/myOrders/:email', verifyJWT, async (req, res) => {
@@ -142,7 +147,9 @@ async function run() {
                 $set: {
                     location: data.location,
                     education: data.education,
-                    phnNumber: data.phnNumber
+                    phnNumber: data.phnNumber,
+                    socialMedia: data.socialMedia
+
                 }
             }
             const result = await usersCollection.updateOne(filter, updateDoc)
