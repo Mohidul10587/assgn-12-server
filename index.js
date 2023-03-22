@@ -14,8 +14,8 @@ app.use(express.json());
 app.use(cors())
 app.use(express.json())
 
-// cons uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ohpemee.mongodb.net/?retryWrites=true&w=majority`;
-const uri = 'mongodb://mohid:f2WoP4JTiUqYoftX@ac-advgvfk-shard-00-00.ohpemee.mongodb.net:27017,ac-advgvfk-shard-00-01.ohpemee.mongodb.net:27017,ac-advgvfk-shard-00-02.ohpemee.mongodb.net:27017/?ssl=true&replicaSet=atlas-4xy0vv-shard-0&authSource=admin&retryWrites=true&w=majority'
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ohpemee.mongodb.net/?retryWrites=true&w=majority`;
+// const uri = 'mongodb://mohid:f2WoP4JTiUqYoftX@ac-advgvfk-shard-00-00.ohpemee.mongodb.net:27017,ac-advgvfk-shard-00-01.ohpemee.mongodb.net:27017,ac-advgvfk-shard-00-02.ohpemee.mongodb.net:27017/?ssl=true&replicaSet=atlas-4xy0vv-shard-0&authSource=admin&retryWrites=true&w=majority'
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 // verify token
@@ -90,7 +90,7 @@ async function run() {
             res.send(myOrders)
 
         })
-        app.put('/user/:email', async (req, res) => {
+        app.put('/user/:email',verifyJWT, verifyAdmin, async (req, res) => {
             const email = req.params.email;
             const user = req.body;
             const filter = { email: email };
