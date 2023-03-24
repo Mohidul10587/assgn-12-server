@@ -173,16 +173,36 @@ async function run() {
                 clientSecret: paymentIntent.client_secret,
             });
         });
+
+        // Change Status 
+        app.post('/updatePendingToShiped/:id', verifyJWT, async (req, res) => {
+   
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+           
+            const updatedDoc = {
+                $set: {
+                    status:'Shipped'
+                }
+            }
+            const updatedResult = await ordersCollection.updateOne(filter, updatedDoc)
+            res.send(updatedResult);
+        })
+
+        // pay and set transaction Id 
         app.post('/payments', verifyJWT, async (req, res) => {
             const payment = req.body;
             const result = await paymentsCollection.insertOne(payment);
             const orderId = payment.orderId
+            const status = payment.status
+
             const transactionId = payment.transactionId
             const filter = { _id: ObjectId(orderId) }
             const updatedDoc = {
                 $set: {
                     paid: true,
-                    transactionId: transactionId
+                    transactionId: transactionId,
+                    status:status
 
                 }
             }
@@ -196,6 +216,16 @@ async function run() {
             res.send(result)
 
         })
+
+        // get all orders
+
+        app.get('/allOrders', verifyJWT, async (req, res) => {
+            const orders = await ordersCollection.find({}).toArray()
+            res.send(orders)
+
+        })
+
+        
         app.get('/orders/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
